@@ -1,3 +1,5 @@
+import copy
+
 class Tensor:
     def __init__(self, data=None, shape=None):
         if data is None:
@@ -26,41 +28,21 @@ class Tensor:
                 for i in range(self.__shape[index]):
                     zero_tensor.append(0)
             else:  # else duplicate the tensor self.__shape amount of times
-                zero_tensor = [zero_tensor for _ in range(self.__shape[index])]
+                zero_tensor = [copy.deepcopy(zero_tensor) for _ in range(self.__shape[index])]
 
-        # create tensor with values from self.__data; same dimension as zero_tensor
-        tensor = []
-        data_in_tensor = 0
-        data_length = len(self.__data)
-        for i in range(self.__shape[0]):  # number of elements/lists in tensor (depth 1)
-            if isinstance(zero_tensor[i], list):  # check if the element is list
-                # create a smaller dimension tensor - divide and conquer
-                t = Tensor(data=self.__data[data_in_tensor:], shape=self.__shape[1:]).__tensor
-                data_in_tensor += Tensor.get_number_of_elements(t, 0)
-                tensor.append(t)
-            else:  # element is not a list therefore append data value
-                # check if there is data to append
-                if data_in_tensor < data_length:
-                    tensor.append(self.__data[data_in_tensor])
-                    data_in_tensor += 1
-                else:
-                    tensor.append(0)
-        return tensor
+        self.__traverse_tensor(zero_tensor, 0, len(self.__data))
+        return zero_tensor
 
-    # recursively traverses the tensor and counts the number of non-list values
-    @classmethod
-    def get_number_of_elements(cls, ls, total):
+    def __traverse_tensor(self, ls, nr_data_points, data_length):
         if not isinstance(ls, list):
-            try:
-                total += 1
-                return total
-            except TypeError:
-                pass
+            if nr_data_points < data_length:
+                return self.__data[nr_data_points], nr_data_points + 1
+            else:
+                return 0, nr_data_points
         else:
-            for element in ls:
-                total = Tensor.get_number_of_elements(element, total)
-            return total
-
+            for i in range(len(ls)):
+                ls[i], nr_data_points = self.__traverse_tensor(ls[i], nr_data_points, data_length)
+            return ls, nr_data_points
 
 def main():
     data0 = [0, 1, 2, 3, 4, 5, 0.1, 0.2, -3]
